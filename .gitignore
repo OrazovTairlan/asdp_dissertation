@@ -1,0 +1,16 @@
+.venv/
+data/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+node_modules/
+frontend/dist/
+app/static/*
+!app/static/.gitkeep
+*.log
+frontend/coverage/
