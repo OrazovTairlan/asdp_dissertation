@@ -1,0 +1,17 @@
+.venv
+data
+__pycache__
+*.pyc
+.git
+.github
+.pytest_cache
+.ruff_cache
+tests
+samples
+docs
+modelfiles
+scripts
+**/node_modules
+frontend/dist
+app/static/*
+!app/static/.gitkeep
