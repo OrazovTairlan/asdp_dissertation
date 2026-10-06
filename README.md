@@ -140,3 +140,5 @@ cd frontend && npm run lint && npm run coverage && npm run build
 [MIT](LICENSE). The sample regulation in `samples/` belongs to its owner (Astana IT University) and is included for demonstration only.
 
 Russian version of this README: [README.ru.md](README.ru.md).
+
+<!-- ci test -->
