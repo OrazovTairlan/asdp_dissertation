@@ -1,0 +1,20 @@
+name: Bug report
+description: Something works incorrectly (parsing, KPI calculation, UI, CI)
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Expected vs actual behaviour. For wrong KPI results attach the quote from the report and the indicator it was matched to.
+    validations: { required: true }
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+    validations: { required: true }
+  - type: input
+    id: env
+    attributes:
+      label: Environment
+      placeholder: "OS, Python/Node version, Ollama model + version, GPU"

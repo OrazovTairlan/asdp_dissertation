@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest an improvement
+labels: [enhancement]
+body:
+  - type: textarea
+    id: story
+    attributes:
+      label: User story
+      placeholder: "As a <role>, I want <action>, so that <result>."
+    validations: { required: true }
+  - type: textarea
+    id: ac
+    attributes:
+      label: Acceptance criteria
+      placeholder: "- [ ] ..."
+  - type: dropdown
+    id: moscow
+    attributes:
+      label: Priority (MoSCoW)
+      options: [Must, Should, Could, Won't (now)]
