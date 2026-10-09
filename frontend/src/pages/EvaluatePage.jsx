@@ -58,11 +58,11 @@ export default function EvaluatePage() {
 
       <Card>
         <CardContent>
-          <Stack gap={2.5}>
+          <Stack gap={5}>
             {catalogs.loading ? (
               <Skeleton variant="rounded" height={56} />
             ) : (
-              <Stack direction={{ xs: 'column', md: 'row' }} gap={2}>
+              <Stack direction={{ xs: 'column', md: 'row' }} gap={5}>
                 <TextField select size="small" label="Каталог KPI" value={effectiveCatalog} onChange={(e) => {
                     setCatalogId(e.target.value);
                     setPositionKey('');
@@ -94,7 +94,7 @@ export default function EvaluatePage() {
               disabled={busy}
             />
 
-            <Stack direction="row" justifyContent="flex-end">
+            <Stack sx = {{p: 1}} direction="row" justifyContent="flex-end">
               <Button
                 variant="contained"
                 size="large"

@@ -240,7 +240,6 @@ export default function ResultView({ submission, onRerun, busy = false }) {
         </Box>
       )}
 
-      <RunConfig config={r.run_config} />
 
       <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>

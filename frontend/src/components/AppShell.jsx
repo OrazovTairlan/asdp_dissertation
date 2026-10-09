@@ -146,8 +146,6 @@ export default function AppShell() {
           )}
           {!desktop && <Brand />}
           <Box sx={{ flex: 1 }} />
-          <HealthChip />
-          <ThemeSwitcher />
         </Toolbar>
       </AppBar>
 
@@ -164,7 +162,7 @@ export default function AppShell() {
       </Box>
 
       <Box component="main" sx={{ flex: 1, minWidth: 0, p: { xs: 2, md: 4 }, pt: { xs: 10, md: 11 } }}>
-        <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+        <Box sx={{ maxWidth: 1650, mx: 'auto' }}>
           <Outlet />
         </Box>
       </Box>

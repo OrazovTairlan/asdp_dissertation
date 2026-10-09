@@ -88,9 +88,9 @@ export default function DashboardPage() {
       )}
 
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, mb: 3 }}>
-        <Stat icon={<LibraryBooksIcon />} label="Каталогов KPI" value={catalogs.data?.length ?? 0} loading={catalogs.loading} />
-        <Stat icon={<FactCheckIcon />} label="Оценок выполнено" value={subs.data?.length ?? 0} loading={subs.loading} />
-        <Stat icon={<SpeedIcon />} label="Средний KPI" value={avg === '—' ? avg : `${avg}%`} loading={subs.loading} />
+        <Stat label="Каталогов KPI" value={catalogs.data?.length ?? 0} loading={catalogs.loading} />
+        <Stat label="Оценок выполнено" value={subs.data?.length ?? 0} loading={subs.loading} />
+        <Stat  label="Средний KPI" value={avg === '—' ? avg : `${avg}%`} loading={subs.loading} />
       </Box>
 
       <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' } }}>

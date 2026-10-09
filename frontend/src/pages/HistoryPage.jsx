@@ -75,7 +75,9 @@ export default function HistoryPage() {
           />
         }
       />
-      <Card>
+      <Card sx = {{
+        p: 2
+      }}>
         {list.loading ? (
           <Skeleton variant="rounded" height={140} />
         ) : rows.length === 0 ? (
