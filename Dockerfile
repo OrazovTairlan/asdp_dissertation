@@ -14,12 +14,6 @@ RUN npm run build
 # ---- stage 2: runtime image (FastAPI + compiled UI) ----
 FROM python:3.12-slim
 
-ARG GIT_COMMIT=unknown
-LABEL org.opencontainers.image.title="IDVS - Intelligent Document Verification System" \
-      org.opencontainers.image.source="https://github.com/OrazovTairlan/asdp_dissertation" \
-      org.opencontainers.image.revision="${GIT_COMMIT}" \
-      org.opencontainers.image.licenses="MIT"
-
 ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
 WORKDIR /srv
 
@@ -28,9 +22,16 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # the service does not need root: fixed uid, writable data directory
-RUN useradd --system --uid 10001 --create-home idvs \
+RUN useradd --uid 10001 --create-home idvs \
     && mkdir /data \
     && chown idvs:idvs /data
+
+# build argument and labels come after the slow layers: a new commit hash must not invalidate the pip cache
+ARG GIT_COMMIT=unknown
+LABEL org.opencontainers.image.title="IDVS - Intelligent Document Verification System" \
+      org.opencontainers.image.source="https://github.com/OrazovTairlan/asdp_dissertation" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.licenses="MIT"
 
 COPY app ./app
 COPY --from=web /web/dist ./app/static
