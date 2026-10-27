@@ -50,3 +50,18 @@ a shared server needs a security realm and credentials.
   local demo; on a shared server use rootless agents or a build service.
 * The production image does not run as root. Bind-mounted data directories must be writable by uid `10001`.
 * Secrets (Docker Hub password) are only read through Jenkins credentials, never stored in the repository.
+
+## Measured results of the first runs
+
+Jenkins 2.580.1, Docker Desktop 28.3.3, kind v0.27.0 (Kubernetes 1.32.2). Back end: 167 tests, coverage 90 %;
+front end: 68 tests; image `idvs` 669 MB.
+
+| Build | Trigger | Result | Duration | What happened |
+|---|---|---|---|---|
+| 1 | commit (polling) | stopped | 7 min 20 s | `git fetch` stalled on a dead connection; aborted and restarted |
+| 2 | manual | failed | 15 s | the static `docker` CLI had no buildx plugin: `BuildKit is enabled but the buildx component is missing` |
+| 3 | manual | success | 6 min 11 s | first green build, all stages, deployed to the kind cluster |
+| 4 | commit (polling) | success | 24 min 32 s | started by a push without any click; the commit hash passed as a build argument invalidated the pip layer, which was slow to rebuild on a weak connection |
+| 5 | commit (polling) | success | 4 min 4 s | build argument moved after the slow layers; second deployment is a rolling update |
+
+Builds started by a push show "Started by an SCM change" in the Jenkins log.
