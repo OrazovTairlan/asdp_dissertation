@@ -11,7 +11,7 @@ unclassified:
     url: http://localhost:8088/
 
 jobs:
-  - script: >
+  - script: |
       pipelineJob('idvs-pipeline') {
         description('Unit tests, Docker image, registry push and Kubernetes deployment of IDVS (Jenkinsfile in the repository).')
         definition {
