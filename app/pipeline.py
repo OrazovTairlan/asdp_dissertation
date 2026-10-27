@@ -8,7 +8,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import config, evaluate, llm, vision
+from . import config, evaluate, llm, publications, vision
 from .docparse import parse_file, render_pdf_pages
 
 IMAGE_EXT = config.IMAGE_EXT
@@ -68,14 +68,24 @@ def create_submission(
 
 def _image_text(r: dict) -> str:
     v = r.get("vision") or {}
-    if not v:
-        return ""
-    parts = [f"Описание изображения (сгенерировано моделью): {v.get('description', '')}", f"Тип: {v.get('document_type', '')}"]
-    if v.get("extracted_text"):
-        parts.append("Текст на изображении (OCR):\n" + v["extracted_text"])
-    for key, label in (("people", "Люди"), ("organizations", "Организации"), ("dates", "Даты")):
-        if v.get(key):
-            parts.append(f"{label}: " + "; ".join(v[key]))
+    parts = []
+    if v:
+        parts += [
+            f"Описание изображения (сгенерировано моделью): {v.get('description', '')}",
+            f"Тип: {v.get('document_type', '')}",
+        ]
+        if v.get("extracted_text"):
+            parts.append("Текст на изображении (OCR):\n" + v["extracted_text"])
+        for key, label in (
+            ("people", "Люди"),
+            ("organizations", "Организации"),
+            ("dates", "Даты"),
+            ("identifiers", "Идентификаторы"),
+        ):
+            if v.get(key):
+                parts.append(f"{label}: " + "; ".join(v[key]))
+    if r.get("qr_codes"):
+        parts.append("QR-код: " + "; ".join(r["qr_codes"]))
     return "\n".join(parts)
 
 
@@ -188,7 +198,7 @@ def process(sub_id: str, catalog: dict, reuse: bool = False) -> None:
                         f"Для должности в документе организации несколько вариантов карты KPI; применён: «{entry['scope']}»."
                     )
                 step(f"Должность: {pos['name']} ({pos['source']}). Оценка блоков KPI моделью {config.TEXT_MODEL}…")
-                ev = evaluate.evaluate(entry, segments, images, progress=step)
+                ev = evaluate.evaluate(entry, segments, images, progress=step, employee=employee)
                 result.update(ev)
                 result["status"] = "done"
                 result["weights_total"] = entry["weight_sum"]
@@ -197,6 +207,12 @@ def process(sub_id: str, catalog: dict, reuse: bool = False) -> None:
                     warnings.append(
                         f"⚠ В документе ({f['source']}) найдена фраза, похожая на попытку повлиять на оценку: «{f['fragment']}». "
                         "На расчёт она не влияет, но результат стоит проверить вручную."
+                    )
+                bad_pubs = [p for p in ev.get("publications", []) if p["status"] in publications.GATE_STATUSES]
+                if bad_pubs:
+                    warnings.append(
+                        f"Внешняя проверка: {len(bad_pubs)} заявленных публикаций не найдены или противоречат открытым базам — "
+                        "такие достижения не засчитаны автоматически и отправлены на проверку человеку."
                     )
                 if ev.get("rejected_achievements"):
                     warnings.append(

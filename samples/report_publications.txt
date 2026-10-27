@@ -1,0 +1,14 @@
+ОТЧЁТ О ВЫПОЛНЕНИИ KPI ЗА 2024–2025 УЧЕБНЫЙ ГОД
+ФИО: Carberry Josiah
+Должность: Профессор
+ORCID: 0000-0002-1825-0097
+
+1. Научно-инновационная и методическая работа
+1.1. Статья «A Methodology for the Emulation of Architecture» опубликована в журнале Journal of Psychoceramics.
+DOI: 10.5555/12345680
+1.2. Статья «Toward a Unified Theory of High-Energy Metaphysics» опубликована в журнале Q1 по Web of Science, аффилиация Astana IT University, статус Accepted. DOI 10.5555/12345678
+1.3. Статья «Attention Is All You Need» опубликована в журнале Q1 по Journal Citation Report (Web of Science), аффилиация Astana IT University, статус Accepted: https://arxiv.org/abs/1706.03762
+1.4. Статья «Federated learning for medical image segmentation» принята в журнал Expert Systems with Applications (Q1 по Web of Science), аффилиация Astana IT University, статус Accepted, DOI: 10.1016/j.eswa.2099.123456
+
+2. Качество преподавания
+Средний результат независимого анкетирования «Преподаватель глазами студентов» составил 85%.

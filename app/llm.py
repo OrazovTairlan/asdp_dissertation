@@ -67,7 +67,11 @@ def run_info() -> dict:
         "seed": config.SEED,
         "num_ctx": config.NUM_CTX,
         "think": config.THINK or None,
+        "think_classify": config.THINK_CLASSIFY or None,
+        "org_aliases": config.ORG_ALIASES,
         "cache": cache_enabled(),
+        "critic": config.CRITIC,
+        "external_lookup": config.EXTERNAL_LOOKUP,
     }
 
 
@@ -122,6 +126,7 @@ def chat(
     images: list[bytes] | None = None,
     num_ctx: int | None = None,
     think: str | None = None,
+    history: list[dict] | None = None,
 ) -> str:
     msg_user: dict = {"role": "user", "content": user}
     if images:
@@ -129,7 +134,7 @@ def chat(
     payload: dict = {
         "model": model,
         "stream": False,
-        "messages": [{"role": "system", "content": system}, msg_user],
+        "messages": [{"role": "system", "content": system}, *(history or []), msg_user],
         "options": {
             "temperature": config.TEMPERATURE,
             "top_k": config.TOP_K,
@@ -193,5 +198,18 @@ def chat_json(
     raise LLMError(f"Модель вернула невалидный JSON: {last[:300]!r}")
 
 
-def text_json(system: str, user: str, schema: dict) -> dict:
-    return chat_json(config.TEXT_MODEL, system, user, schema, think=config.THINK or None)
+def text_json(system: str, user: str, schema: dict, think: str | None = None) -> dict:
+    return chat_json(config.TEXT_MODEL, system, user, schema, think=think or config.THINK or None)
+
+
+def text_chat(system: str, history: list[dict], user: str, think: str | None = None) -> str:
+    dialog = json.dumps(history, ensure_ascii=False, sort_keys=True) + "\x00" + user
+    key = cache_key(config.TEXT_MODEL, system, dialog, None, None, config.NUM_CTX, think) if cache_enabled() else None
+    if key and (hit := _cache_get(key)) is not None:
+        return hit["text"]
+    text = chat(config.TEXT_MODEL, system, user, history=history, think=think).strip()
+    if not text:
+        raise LLMError("Модель вернула пустой ответ")
+    if key:
+        _cache_put(key, {"text": text})
+    return text

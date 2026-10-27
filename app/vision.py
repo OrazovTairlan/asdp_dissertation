@@ -28,9 +28,19 @@ VISION_SCHEMA = {
         "people": {"type": "array", "items": {"type": "string"}},
         "organizations": {"type": "array", "items": {"type": "string"}},
         "dates": {"type": "array", "items": {"type": "string"}},
+        "identifiers": {"type": "array", "items": {"type": "string"}},
         "visual_anomalies": {"type": "array", "items": {"type": "string"}},
     },
-    "required": ["description", "document_type", "extracted_text", "people", "organizations", "dates", "visual_anomalies"],
+    "required": [
+        "description",
+        "document_type",
+        "extracted_text",
+        "people",
+        "organizations",
+        "dates",
+        "identifiers",
+        "visual_anomalies",
+    ],
 }
 
 VISION_SYSTEM = (
@@ -44,6 +54,8 @@ VISION_PROMPT = """Проанализируй изображение и верн
 - people: ФИО людей, указанные на изображении (только если написаны).
 - organizations: организации/издательства/университеты, указанные на изображении.
 - dates: даты, указанные на изображении, в исходном написании.
+- identifiers: идентификаторы, видимые на изображении, дословно: DOI, ORCID, ISBN/ISSN, arXiv, номера и коды сертификатов, \
+ссылки (URL). Если не видно — пустой список. Не дописывай и не исправляй символы.
 - visual_anomalies: признаки возможного монтажа, ВИДИМЫЕ глазом (разные шрифты/размеры в одной строке, неровное выравнивание, \
 следы стирания/наклейки, неестественные края вставленного текста или печати, несовпадение теней/освещения). Если не видно — пустой список."""
 
@@ -80,6 +92,7 @@ def analyze(path: Path, out_dir: Path, image_id: str, use_vlm: bool = True) -> d
 
     bgr = imaging._to_bgr(path.read_bytes())
     result["blur"] = imaging.blur_analysis(bgr)
+    result["qr_codes"] = imaging.read_qr(bgr)
 
     vlm: dict | None = None
     if use_vlm:

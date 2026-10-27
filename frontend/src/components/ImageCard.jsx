@@ -1,4 +1,4 @@
-import { Box, Card, CardContent, Chip, Stack, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
+import { Box, Card, CardContent, Chip, Link, Stack, Table, TableBody, TableCell, TableRow, Typography } from '@mui/material';
 import { api } from '../api';
 import { BLUR_LABEL, IMAGE_LEVEL, TAMPER_RISK, truncate } from '../utils/format';
 
@@ -85,6 +85,30 @@ export default function ImageCard({ submissionId, image }) {
                       • {s.text}
                     </Typography>
                   ))}
+              </Row>
+            )}
+            {(image.qr_codes ?? []).length > 0 && (
+              <Row label="QR-код">
+                {image.qr_codes.map((q) => (
+                  <Typography key={q} variant="caption" display="block" sx={{ wordBreak: 'break-all' }}>
+                    {/^https?:\/\//i.test(q) ? (
+                      <Link href={q} target="_blank" rel="noopener noreferrer">
+                        {truncate(q, 120)}
+                      </Link>
+                    ) : (
+                      truncate(q, 120)
+                    )}
+                  </Typography>
+                ))}
+              </Row>
+            )}
+            {(vision?.identifiers ?? []).length > 0 && (
+              <Row label="Идентификаторы">
+                <Stack direction="row" gap={0.5} flexWrap="wrap">
+                  {vision.identifiers.map((i) => (
+                    <Chip key={i} size="small" variant="outlined" label={truncate(i, 60)} />
+                  ))}
+                </Stack>
               </Row>
             )}
             {vision && (

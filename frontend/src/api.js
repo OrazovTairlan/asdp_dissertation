@@ -59,6 +59,15 @@ export const api = {
     }),
   deleteSubmission: (id) => request(`/api/submissions/${id}`, { method: 'DELETE' }),
 
+  getChat: (id) => request(`/api/submissions/${id}/chat`),
+  sendChat: (id, { message, focus = null }) =>
+    request(`/api/submissions/${id}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, focus }),
+    }),
+  clearChat: (id) => request(`/api/submissions/${id}/chat`, { method: 'DELETE' }),
+
   exportUrl: (id) => `${BASE}/api/submissions/${id}/export.xlsx`,
   fileUrl: (id, name) => `${BASE}/api/submissions/${id}/files/${encodeURIComponent(name)}`,
 };

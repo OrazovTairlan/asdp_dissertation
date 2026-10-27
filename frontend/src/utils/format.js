@@ -46,3 +46,83 @@ export const BLUR_LABEL = {
   blurred: { color: 'error' },
   unknown: { color: 'default' },
 };
+
+export const PUB_STATUS = {
+  verified: { label: 'Подтверждена', color: 'success' },
+  found: { label: 'Найдена, подтверждено не всё', color: 'info' },
+  candidate: { label: 'Кандидат по названию', color: 'warning' },
+  no_identifiers: { label: 'Нет идентификаторов', color: 'default' },
+  unavailable: { label: 'Базы недоступны', color: 'default' },
+  not_found: { label: 'Не найдена', color: 'error' },
+  conflict: { label: 'Противоречит заявлению', color: 'error' },
+};
+
+export const COVERAGE_STATUS = {
+  fulfilled: { label: 'Выполнен', color: 'success' },
+  review: { label: 'На проверку', color: 'error' },
+  partial: { label: 'Не подтверждён', color: 'warning' },
+  not_claimed: { label: 'Нет заявлений', color: 'default' },
+};
+
+const ID_LINK = {
+  doi: (v) => `https://doi.org/${v}`,
+  orcid: (v) => `https://orcid.org/${v}`,
+  arxiv: (v) => `https://arxiv.org/abs/${v}`,
+  pmid: (v) => `https://pubmed.ncbi.nlm.nih.gov/${v}/`,
+  url: (v) => v,
+};
+
+export const identifierList = (ids = {}) =>
+  Object.entries(ids).flatMap(([kind, values]) =>
+    (values ?? []).filter(Boolean).map((value) => ({ kind, value, href: ID_LINK[kind]?.(value) ?? null })),
+  );
+
+export function splitHighlight(text, part) {
+  const t = String(text ?? '');
+  const p = String(part ?? '').trim();
+  const i = p ? t.toLowerCase().indexOf(p.toLowerCase()) : -1;
+  if (i < 0 || p.length === t.length) return [t, '', ''];
+  return [t.slice(0, i), t.slice(i, i + p.length), t.slice(i + p.length)];
+}
+
+export function quoteSpans(text) {
+  const s = String(text ?? '');
+  const out = [];
+  let depth = 0;
+  let start = 0;
+  let plain = 0;
+  for (let i = 0; i < s.length; i += 1) {
+    if (s[i] === '«') {
+      if (depth === 0) {
+        if (i > plain) out.push({ text: s.slice(plain, i) });
+        start = i + 1;
+      }
+      depth += 1;
+    } else if (s[i] === '»' && depth > 0) {
+      depth -= 1;
+      if (depth === 0) {
+        out.push({ quote: s.slice(start, i).trim() });
+        plain = i + 1;
+      }
+    }
+  }
+  if (depth > 0) out.push({ text: s.slice(start - 1) });
+  else if (plain < s.length) out.push({ text: s.slice(plain) });
+  return out;
+}
+
+export function suggestQuestions(r) {
+  if (!r?.blocks) return [];
+  const matches = r.blocks.flatMap((b) => b.matches ?? []);
+  const out = [];
+  const missed = matches.find((m) => !m.counted);
+  if (missed) out.push(`Почему достижение ${missed.achievement_id} по показателю ${missed.indicator_num} не засчитано?`);
+  const counted = matches.find((m) => m.counted);
+  if (counted) out.push(`На каком основании засчитано достижение ${counted.achievement_id}?`);
+  const weak = r.blocks.find((b) => b.fulfillment < 100);
+  if (weak) out.push(`Почему блок «${truncate(weak.title, 60)}» выполнен на ${weak.fulfillment}%?`);
+  const um = (r.unmatched_achievements ?? [])[0];
+  if (um) out.push(`Почему достижение ${um.id} не отнесено ни к одному показателю?`);
+  out.push('Что нужно добавить в отчёт, чтобы повысить KPI?');
+  return out.slice(0, 5);
+}

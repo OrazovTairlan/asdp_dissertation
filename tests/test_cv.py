@@ -102,3 +102,21 @@ def test_vision_model_unavailable_is_reported_not_raised(tmp_path, monkeypatch):
     monkeypatch.setattr(llm, "chat_json", boom)
     r = vision.analyze(IMG / "certificate_sharp.jpg", tmp_path, "img5")
     assert r["vision"] is None and "недоступна" in r["errors"][0]
+
+
+def test_qr_code_is_decoded(tmp_path):
+    import cv2
+
+    qr = cv2.QRCodeEncoder.create().encode("https://doi.org/10.5555/12345680")
+    big = cv2.resize(qr, None, fx=12, fy=12, interpolation=cv2.INTER_NEAREST)
+    canvas = np.full((big.shape[0] + 200, big.shape[1] + 200), 255, dtype=np.uint8)
+    canvas[100 : 100 + big.shape[0], 100 : 100 + big.shape[1]] = big
+    bgr = cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR)
+    assert imaging.read_qr(bgr) == ["https://doi.org/10.5555/12345680"]
+    p = tmp_path / "qr.png"
+    cv2.imwrite(str(p), bgr)
+    assert imaging.read_qr(imaging._to_bgr(p.read_bytes())) == ["https://doi.org/10.5555/12345680"]
+
+
+def test_qr_absent_returns_empty():
+    assert imaging.read_qr(np.full((400, 400, 3), 255, dtype=np.uint8)) == []

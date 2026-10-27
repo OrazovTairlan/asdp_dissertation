@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import cv2
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
@@ -27,6 +28,24 @@ def certificate(name="Иванов Иван Иванович", course="Machine L
     return Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
 
 
+def acceptance_letter(doi="10.5555/12345680", title="A Methodology for the Emulation of Architecture"):
+    im = Image.new("RGB", (1240, 1754), (255, 255, 255))
+    d = ImageDraw.Draw(im)
+    d.text((100, 120), "Journal of Psychoceramics", font=f(54), fill=(20, 40, 90))
+    d.line((100, 200, 1140, 200), fill=(20, 40, 90), width=4)
+    d.text((100, 280), "Letter of publication", font=f(40), fill=(30, 30, 30))
+    d.text((100, 380), "Dear Dr. Josiah Carberry,", font=f(32), fill=(30, 30, 30))
+    d.text((100, 450), "your article has been published:", font=f(32), fill=(30, 30, 30))
+    d.text((100, 530), f"«{title}»", font=f(32), fill=(10, 10, 10))
+    d.text((100, 610), f"DOI: {doi}", font=f(34), fill=(10, 10, 10))
+    d.text((100, 670), "ORCID: 0000-0002-1825-0097", font=f(34), fill=(10, 10, 10))
+    qr = cv2.QRCodeEncoder.create().encode(f"https://doi.org/{doi}")
+    qr = cv2.resize(qr, None, fx=10, fy=10, interpolation=cv2.INTER_NEAREST)
+    im.paste(Image.fromarray(qr).convert("RGB"), (100, 800))
+    d.text((100 + qr.shape[1] + 40, 800 + qr.shape[0] // 2), "Scan to open the article", font=f(28), fill=(80, 80, 80))
+    return im
+
+
 if __name__ == "__main__":
     c = certificate()
     c.save(OUT / "certificate_sharp.jpg", quality=92)
@@ -40,4 +59,5 @@ if __name__ == "__main__":
     ex = e.getexif()
     ex[0x0131] = "Adobe Photoshop 25.1 (Windows)"
     e.save(OUT / "certificate_edited.jpg", quality=90, exif=ex)
+    acceptance_letter().save(OUT / "publication_letter_qr.png")
     print("ok", sorted(p.name for p in OUT.iterdir()))

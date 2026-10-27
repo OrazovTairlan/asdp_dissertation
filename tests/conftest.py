@@ -6,6 +6,7 @@ from pathlib import Path
 _TMP = tempfile.mkdtemp(prefix="kpi-tests-")
 os.environ["DATA_DIR"] = _TMP
 os.environ["LLM_CACHE"] = "0"
+os.environ["EXTERNAL_LOOKUP"] = "0"
 
 import openpyxl
 import pytest
@@ -99,9 +100,18 @@ class FakeLLM:
         self.position: dict = {"position": "НЕ УКАЗАНА", "quote": ""}
         self.link: dict = {"achievement_id": "NONE", "reasoning": "нет связи"}
         self.calls: list[str] = []
+        self.objections = []
+        self.checklists: dict = {}
 
-    def text_json(self, system, user, schema):
+    def text_json(self, system, user, schema, think=None):
         props = schema["properties"]
+        if "objections" in props:
+            self.calls.append("critic")
+            return {"objections": self.objections(user) if callable(self.objections) else self.objections}
+        if "indicators" in props:
+            self.calls.append("checklist")
+            ids = props["indicators"]["items"]["properties"]["indicator_id"]["enum"]
+            return {"indicators": [{"indicator_id": i, "conditions": self.checklists[i]} for i in ids if i in self.checklists]}
         if "achievements" in props:
             self.calls.append("extract")
             return {"achievements": self.achievements}
@@ -125,6 +135,10 @@ class FakeLLM:
 
 def cond(text: str, supported: bool, evidence: str = "") -> dict:
     return {"condition": text, "supported": supported, "evidence": evidence}
+
+
+def ccond(cid: str, supported: bool, evidence: str = "", reasoning: str = "") -> dict:
+    return {"condition_id": cid, "supported": supported, "evidence": evidence, "reasoning": reasoning}
 
 
 @pytest.fixture

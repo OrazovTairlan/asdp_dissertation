@@ -100,6 +100,25 @@ def blur_analysis(bgr: np.ndarray) -> dict:
     return {"score": round(score, 1), "label": label, "text": text, "thresholds": {"sharp": BLUR_SHARP, "slight": BLUR_SLIGHT}}
 
 
+def read_qr(bgr: np.ndarray) -> list[str]:
+    det = cv2.QRCodeDetector()
+    found: list[str] = []
+    for img in (bgr, cv2.resize(bgr, None, fx=0.5, fy=0.5) if max(bgr.shape[:2]) > 1800 else None):
+        if img is None or found:
+            continue
+        try:
+            ok, decoded, _, _ = det.detectAndDecodeMulti(img)
+            if ok:
+                found += [d for d in decoded if d]
+            if not found:
+                value, _, _ = det.detectAndDecode(img)
+                if value:
+                    found.append(value)
+        except cv2.error:
+            continue
+    return list(dict.fromkeys(found))
+
+
 def exif_signals(path: Path) -> tuple[list[dict], dict]:
     signals, meta = [], {}
     try:

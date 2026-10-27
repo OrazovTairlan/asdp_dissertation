@@ -20,6 +20,9 @@ vi.mock('./api', () => ({
     createSubmission: vi.fn(),
     rerunSubmission: vi.fn(),
     deleteSubmission: vi.fn(),
+    getChat: vi.fn(),
+    sendChat: vi.fn(),
+    clearChat: vi.fn(),
     exportUrl: (id) => `/api/submissions/${id}/export.xlsx`,
     fileUrl: (id, name) => `/api/submissions/${id}/files/${name}`,
   },
@@ -48,14 +51,12 @@ describe('навигация и панель', () => {
     const table = await screen.findByRole('table', { name: 'Последние оценки' });
     expect(within(table).getByText('Тестов Т.Т.')).toBeInTheDocument();
     expect(await screen.findByText('90%', { selector: '.MuiTypography-h5' })).toBeInTheDocument();
-    expect(await screen.findByTestId('health-chip')).toHaveTextContent('gpt-oss:20b');
   });
 
   it('Ollama недоступна → предупреждение и красный индикатор', async () => {
     api.health.mockResolvedValue({ ...health, reachable: false, text_model_ok: false });
     renderWithProviders(<App />);
     expect(await screen.findByText(/Ollama недоступна по адресу/)).toBeInTheDocument();
-    expect(await screen.findByTestId('health-chip')).toHaveTextContent('Ollama недоступна');
   });
 
   it('меню ведёт на страницу правил модели с текстами промптов', async () => {

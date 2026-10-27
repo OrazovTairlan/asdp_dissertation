@@ -4,6 +4,7 @@ import io
 import json
 import shutil
 import tempfile
+import threading
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -11,8 +12,9 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
-from . import __version__, config, llm, pipeline, prompts
+from . import __version__, chat, config, llm, pipeline, prompts
 from .catalog import build_catalog, public_catalog
 from .docparse import parse_file
 
@@ -181,10 +183,65 @@ def rerun(sid: str, position_key: str = Form(""), scope_index: int = Form(0)):
         raise HTTPException(404, "Не найдено")
     if st["status"] in ("queued", "running"):
         raise HTTPException(409, "Оценка ещё выполняется")
-    st.update(position_key=position_key, scope_index=scope_index, status="queued", result=None)
+    st.update(position_key=position_key, scope_index=scope_index, status="queued", result=None, chat=[])
     pipeline.save_state(st)
     pipeline.start(sid, _load_catalog(st["catalog_id"]), reuse=True)
     return {"id": sid}
+
+
+_CHAT_LOCK = threading.Lock()
+
+
+class ChatIn(BaseModel):
+    message: str = Field(min_length=1, max_length=chat.MAX_QUESTION)
+    focus: dict | None = None
+
+
+def _done_state(sid: str) -> dict:
+    st = pipeline.load_state(sid) if sid.isalnum() else None
+    if not st:
+        raise HTTPException(404, "Не найдено")
+    if st["status"] != "done" or (st.get("result") or {}).get("status") != "done":
+        raise HTTPException(409, "Диалог доступен после завершения оценки")
+    return st
+
+
+@app.get("/api/submissions/{sid}/chat")
+def get_chat(sid: str):
+    st = pipeline.load_state(sid) if sid.isalnum() else None
+    if not st:
+        raise HTTPException(404, "Не найдено")
+    return {"messages": st.get("chat") or [], "model": config.TEXT_MODEL}
+
+
+@app.post("/api/submissions/{sid}/chat")
+def post_chat(sid: str, body: ChatIn):
+    st = _done_state(sid)
+    question = body.message.strip()
+    if not question:
+        raise HTTPException(400, "Пустой вопрос")
+    focus = {k: str(v) for k, v in (body.focus or {}).items() if k in ("achievement_id", "indicator_id") and v}
+    try:
+        reply = chat.ask(st["result"], chat.load_segments(sid), st.get("chat") or [], question, focus or None)
+    except llm.LLMError as e:
+        raise HTTPException(503, str(e)) from e
+    asked = {"role": "user", "content": question, "focus": focus or None, "t": reply["t"]}
+    with _CHAT_LOCK:
+        st = _done_state(sid)
+        st["chat"] = [*(st.get("chat") or []), asked, reply]
+        pipeline.save_state(st)
+    return {"messages": st["chat"]}
+
+
+@app.delete("/api/submissions/{sid}/chat")
+def clear_chat(sid: str):
+    with _CHAT_LOCK:
+        st = pipeline.load_state(sid) if sid.isalnum() else None
+        if not st:
+            raise HTTPException(404, "Не найдено")
+        st["chat"] = []
+        pipeline.save_state(st)
+    return {"messages": []}
 
 
 @app.get("/api/submissions/{sid}/files/{name}")
