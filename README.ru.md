@@ -118,3 +118,6 @@ cd frontend && npm run lint && npm run coverage && npm run build               #
 
 GitHub Actions: `ci.yml` (линтеры, тесты на Python 3.11–3.13, сборка фронтенда, Docker + smoke-тест), `codeql.yml`,
 `release.yml` (по тегу `vX.Y.Z` — публикация образа в GHCR и GitHub Release).
+
+Jenkins (Docker + Kubernetes): `Jenkinsfile`, `ci/`, `k8s/` — тесты в контейнерах, сборка и push образа, деплой в kind;
+описание и запуск: [docs/CICD.md](docs/CICD.md).

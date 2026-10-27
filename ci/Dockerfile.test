@@ -1,0 +1,43 @@
+# syntax=docker/dockerfile:1
+# Quality gates of the IDVS pipeline, run inside containers so that every build sees the
+# same Python / Node versions and no tool has to be installed on the Jenkins machine.
+#
+#   docker build -f ci/Dockerfile.test --target backend-test  -t idvs-backend-test  .
+#   docker build -f ci/Dockerfile.test --target frontend-test -t idvs-frontend-test .
+#
+# The tools never stop the build: each exit code is stored in /reports/*.rc. Jenkins copies
+# /reports out of the image, publishes the JUnit files and only then fails the stage, so a red
+# build still carries its test report.
+# This Dockerfile has its own ignore list (ci/Dockerfile.test.dockerignore): unlike the
+# production image it needs tests/ and samples/.
+
+# ---- backend: ruff + pytest with coverage gate (same commands as .github/workflows/ci.yml) ----
+FROM python:3.12-slim AS backend-test
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PIP_NO_CACHE_DIR=1
+WORKDIR /srv
+COPY requirements.txt requirements-dev.txt ./
+RUN pip install -r requirements.txt -r requirements-dev.txt
+COPY pyproject.toml ./
+COPY app ./app
+COPY tests ./tests
+COPY samples ./samples
+COPY modelfiles ./modelfiles
+RUN mkdir -p /reports; \
+    ruff check . ; echo $? > /reports/ruff.rc; \
+    ruff format --check . ; echo $? > /reports/format.rc; \
+    pytest --cov --cov-report=term-missing --cov-report=xml:/reports/backend-coverage.xml \
+           --cov-fail-under=80 --junitxml=/reports/backend-junit.xml ; echo $? > /reports/pytest.rc; \
+    exit 0
+
+# ---- frontend: ESLint + Vitest (coverage thresholds) + production build ----
+FROM node:22-alpine AS frontend-test
+WORKDIR /web
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN mkdir -p /reports; \
+    npm run lint ; echo $? > /reports/lint.rc; \
+    npx vitest run --coverage --reporter=default --reporter=junit \
+        --outputFile.junit=/reports/frontend-junit.xml ; echo $? > /reports/vitest.rc; \
+    npm run build ; echo $? > /reports/build.rc; \
+    exit 0

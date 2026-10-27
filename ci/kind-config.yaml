@@ -1,0 +1,11 @@
+# Single-node Kubernetes cluster for the CD stage. NodePort 30080 of the node is published on
+# 127.0.0.1:18080, so the deployed IDVS can be opened in a browser: http://localhost:18080
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      - containerPort: 30080
+        hostPort: 18080
+        listenAddress: "127.0.0.1"
+        protocol: TCP

@@ -1,0 +1,31 @@
+# Jenkins Configuration as Code for the local IDVS demo.
+# Security note: access control is switched off because the server listens on 127.0.0.1 only
+# (see ci/docker-compose.yml). A shared server needs a security realm and credentials.
+jenkins:
+  systemMessage: "IDVS CI/CD - Assignment 5 (Docker + Jenkins + Kubernetes)"
+  numExecutors: 2
+  authorizationStrategy: unsecured
+
+unclassified:
+  location:
+    url: http://localhost:8088/
+
+jobs:
+  - script: >
+      pipelineJob('idvs-pipeline') {
+        description('Unit tests, Docker image, registry push and Kubernetes deployment of IDVS (Jenkinsfile in the repository).')
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote { url('https://github.com/OrazovTairlan/asdp_dissertation.git') }
+                branches('*/assignment5-jenkins')
+              }
+            }
+            scriptPath('Jenkinsfile')
+            lightweight(false)
+          }
+        }
+        triggers { scm('* * * * *') }
+      }
+      queue('idvs-pipeline')

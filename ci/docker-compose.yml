@@ -1,0 +1,32 @@
+# Local CI/CD environment for IDVS:  docker compose -f ci/docker-compose.yml up -d --build
+#   Jenkins   http://localhost:8088   (job "idvs-pipeline" is created from ci/jenkins/casc.yaml)
+#   Registry  localhost:5000          (target of the "push" stage; plain registry:2)
+# Jenkins gets the host Docker socket so that "docker build" in the Jenkinsfile uses the host daemon.
+# That is root-equivalent access: acceptable for a local demo, not for a shared server.
+name: idvs-ci
+
+services:
+  jenkins:
+    build: ./jenkins
+    image: idvs-jenkins:local
+    container_name: idvs-jenkins
+    user: root
+    ports:
+      - "127.0.0.1:8088:8080"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  registry:
+    image: registry:2
+    container_name: idvs-registry
+    ports:
+      - "127.0.0.1:5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+    restart: unless-stopped
+
+volumes:
+  jenkins_home:
+  registry_data:

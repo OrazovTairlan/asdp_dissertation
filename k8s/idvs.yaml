@@ -1,0 +1,80 @@
+# IDVS on Kubernetes (test environment). The Jenkins CD stage replaces IMAGE_PLACEHOLDER with the
+# image built in the same run, e.g. idvs:12, and applies this file with kubectl.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: idvs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: idvs
+  namespace: idvs
+  labels:
+    app: idvs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: idvs
+  template:
+    metadata:
+      labels:
+        app: idvs
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: idvs
+          image: IMAGE_PLACEHOLDER
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            # the LLM runs outside the cluster (Ollama on the developer machine)
+            - name: OLLAMA_URL
+              value: "http://host.docker.internal:11434"
+            - name: LLM_CACHE
+              value: "1"
+          readinessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8000
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: idvs
+  namespace: idvs
+spec:
+  type: NodePort
+  selector:
+    app: idvs
+  ports:
+    - port: 80
+      targetPort: 8000
+      nodePort: 30080
